@@ -1,0 +1,4 @@
+interface:
+  display_name: "DFX Git Shortcuts"
+  short_description: "使用 dfx 检查并批量处理主仓库和子模块 Git 操作"
+  default_prompt: "Use $dfx-git-shortcuts to inspect repository status with dfx gss, then run the appropriate cross-repository Git shortcut."

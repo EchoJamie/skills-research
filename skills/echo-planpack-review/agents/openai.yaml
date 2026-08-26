@@ -1,0 +1,6 @@
+interface:
+  display_name: "echo-planpack-review"
+  short_description: "正式独立审核实施方案或开发工具包并生成可追溯审核记录"
+  default_prompt: "使用 $echo-planpack-review 正式审核指定的实施方案或开发工具包并创建审核记录。"
+policy:
+  allow_implicit_invocation: false

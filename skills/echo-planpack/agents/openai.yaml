@@ -1,0 +1,6 @@
+interface:
+  display_name: "echo-planpack"
+  short_description: "将已确定功能转换为可审核方案、开发工具包和实施边界"
+  default_prompt: "使用 $echo-planpack 将已确定的功能需求转换为实施方案和开发工具包。"
+policy:
+  allow_implicit_invocation: true

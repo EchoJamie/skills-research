@@ -1,0 +1,6 @@
+interface:
+  display_name: "Jamie 工作约定"
+  short_description: "在非简单任务开始前按 Jamie 的个人偏好校准自主决策"
+  default_prompt: "使用 $jamie-working-agreements 在开始任务前按当前场景校准处理方式。"
+policy:
+  allow_implicit_invocation: true

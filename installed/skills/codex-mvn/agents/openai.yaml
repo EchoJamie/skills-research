@@ -1,0 +1,4 @@
+interface:
+  display_name: "Codex Maven"
+  short_description: "验证 Java Maven 改动并归档精简构建结果"
+  default_prompt: "Use $codex-mvn to run Maven validation for this Java project and inspect only the summarized result artifacts."

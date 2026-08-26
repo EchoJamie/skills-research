@@ -1,0 +1,42 @@
+# macOS / editors
+.DS_Store
+.idea/
+.vscode/
+*.swp
+*.swo
+*~
+
+# Secrets and machine-local configuration
+.env
+.env.*
+!.env.example
+*.key
+*.pem
+*.p12
+*.pfx
+secrets/
+
+# Python
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.coverage
+htmlcov/
+.venv/
+venv/
+
+# JavaScript tooling used by experiments
+node_modules/
+.pnpm-store/
+
+# Generated output and local runtime state
+build/
+dist/
+coverage/
+.cache/
+.tmp/
+.codex-tmp/
+.skills-research-state/
+*.log

@@ -29,6 +29,7 @@
 - Skill 目录名和 `SKILL.md` 中的 `name` 使用小写字母、数字和连字符，且保持一致。
 - `SKILL.md` 必须包含 `name`、`description` 和完成任务所需的最少指令。
 - 仅在确有用途时增加 `scripts/`、`references/`、`assets/` 或 `agents/openai.yaml`；不要机械生成空目录或重复文档。
+- Skill 或 Agent 存在 `openai.yaml` 时，`interface.display_name` 使用对应资源的英文原名称，不使用中文本地化名称。
 - 大段条件化说明放入 `references/`，并从 `SKILL.md` 明确说明何时读取。
 - 修改 Skill 后运行 `make validate`；新增或修改脚本时还要执行对应测试或实际命令验证。
 

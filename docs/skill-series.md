@@ -15,8 +15,17 @@
 | Skill | 作用 | 使用方式 |
 |---|---|---|
 | `jamie-working-agreements` | 将高置信度历史纠偏提炼成 Jamie 的个人工作偏好，在任务开始前校准自主判断 | 非简单任务进入调研、设计、实施、协作或交付时主动使用，并只加载当前场景的 `references/` |
+| `code-governance-review` | 基于完整业务逻辑专项审查职责分层、依赖边界、代码治理、可维护性、可扩展性及设计模式必要性 | 关闭隐式调用，由配套 `code_governance_reviewer` Agent 显式加载；不用于通用代码审查 |
 
 `jamie-working-agreements` 不属于任何系列，因此不标注所属系列。它不占据业务流程的固定阶段，也不替代具体任务 Skill，只负责在任务开始前应用个人偏好；历史对话转折仅用于维护这些偏好的依据。`collaboration-workflow` 继续负责通用的多步骤人机协作循环。
+
+### 代码治理审查配套 Agent
+
+`code-governance-review` 关闭隐式调用，由 `code_governance_reviewer` 显式加载并执行。它只负责代码结构与治理专项审查；功能、安全、性能和测试等事实仅在直接支撑结构判断时引用。
+
+| Agent | 配置 | 启用条件 | 职责边界 |
+|---|---|---|---|
+| `code_governance_reviewer` | [`agents/code-governance-reviewer.toml`](../agents/code-governance-reviewer.toml) | 用户或主对话需要代码结构与治理专项审查时启用 | 基于完整业务逻辑只读核验职责、边界、维护与演进问题；不承担通用审查或代码修改 |
 
 ## 方案协作系列
 

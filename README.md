@@ -29,6 +29,7 @@
 | Skill | 所属系列 | 简介 |
 |---|---|---|
 | `jamie-working-agreements` |  | 在非简单任务开始时加载与场景相关的个人协作偏好。 |
+| `code-governance-review` |  | 由 `code_governance_reviewer` 显式加载，基于完整业务逻辑执行代码结构与治理专项审查。 |
 | `collaboration-workflow` | Solution | 为多步骤调研、设计、实施和交付提供通用的人机协作循环。 |
 | `solution-step-alignment` | Solution | 从简短目标出发，对齐连续步骤并关闭影响主线的关键决策。 |
 | `solution-refinement` | Solution | 在目标步骤已确认后补齐必要设计细节，形成完整方案。 |

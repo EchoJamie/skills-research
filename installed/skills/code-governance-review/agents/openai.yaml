@@ -1,0 +1,5 @@
+interface:
+  display_name: "code-governance-review"
+  short_description: "由 code_governance_reviewer 使用的代码结构与治理专项审查流程"
+policy:
+  allow_implicit_invocation: false

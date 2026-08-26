@@ -13,7 +13,7 @@ help:
 	@echo "  make doctor        检查本机运行条件与安装目录"
 	@echo "  make status        查看开发资源和正式集合状态"
 	@echo "  make device-list   只读盘点设备已有 Skill 与 Agent"
-	@echo "  make sync [FORCE=1] 软链接正式已安装集合"
+	@echo "  make sync [FORCE=1] 挂载正式已安装集合"
 	@echo '  make unsync RESOURCES="skill:name [agent:name]"'
 	@echo '  make adopt RESOURCES="skill:name"  显式纳管一个设备资源'
 	@echo '  make promote RESOURCES="skill:name [agent:name]" [FORCE=1]'

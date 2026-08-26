@@ -68,6 +68,17 @@ class ResourceManagerTest(unittest.TestCase):
         )
         return skill
 
+    def add_installed_agent(self, name: str, marker: str = "formal") -> Path:
+        agent = self.repo / "installed" / "agents" / f"{name}.toml"
+        agent.parent.mkdir(parents=True, exist_ok=True)
+        agent.write_text(
+            f'name = "{name.replace("-", "_")}"\n'
+            'description = "用于验证正式 Agent。"\n'
+            f'developer_instructions = "{marker}"\n',
+            encoding="utf-8",
+        )
+        return agent
+
     def test_validate_and_selective_qa_link_lifecycle(self):
         self.assertTrue(self.manager.validate(use_external=False).ok)
 
@@ -78,7 +89,13 @@ class ResourceManagerTest(unittest.TestCase):
         self.assertFalse(manage.path_present(agent_target))
 
         self.manager.qa_link(["agent:demo-agent"])
-        self.assertTrue(agent_target.is_symlink())
+        self.assertTrue(self.agents_home.is_symlink())
+        self.assertFalse(agent_target.is_symlink())
+        self.assertTrue(
+            manage.same_resource_content(
+                agent_target, self.repo / "agents" / "demo-agent.toml"
+            )
+        )
         output = io.StringIO()
         with redirect_stdout(output):
             self.manager.status()
@@ -87,7 +104,7 @@ class ResourceManagerTest(unittest.TestCase):
 
         self.manager.qa_unlink(["skill:demo-skill", "agent:demo-agent"])
         self.assertFalse(manage.path_present(skill_target))
-        self.assertFalse(manage.path_present(agent_target))
+        self.assertFalse(manage.path_present(self.agents_home))
 
     def test_promote_copies_selected_resources_without_linking_device(self):
         reference = self.repo / "skills" / "demo-skill" / "references" / "guide.md"
@@ -214,6 +231,167 @@ class ResourceManagerTest(unittest.TestCase):
         self.manager.unsync(["skill:active-skill"])
         self.assertFalse(manage.path_present(target))
 
+    def test_agent_sync_uses_one_directory_link_and_unsyncs_as_a_unit(self):
+        first = self.add_installed_agent("first-agent", "first formal")
+        second = self.add_installed_agent("second-agent", "second formal")
+
+        self.manager.sync()
+
+        self.assertTrue(self.agents_home.is_symlink())
+        self.assertEqual(
+            manage.resolved_link(self.agents_home),
+            (self.repo / "installed" / "agents").resolve(),
+        )
+        self.assertFalse((self.agents_home / "first-agent.toml").is_symlink())
+        self.assertTrue(
+            manage.same_resource_content(
+                self.agents_home / "first-agent.toml", first
+            )
+        )
+        self.assertTrue(
+            manage.same_resource_content(
+                self.agents_home / "second-agent.toml", second
+            )
+        )
+
+        with self.assertRaisesRegex(manage.ManagerError, "一次选择"):
+            self.manager.unsync(["agent:first-agent"])
+
+        self.manager.unsync(["agent:first-agent", "agent:second-agent"])
+        self.assertFalse(manage.path_present(self.agents_home))
+
+    def test_agent_qa_overlay_preserves_formal_agents_and_refreshes(self):
+        formal_demo = self.add_installed_agent("demo-agent", "formal demo")
+        formal_other = self.add_installed_agent("other-agent", "formal other")
+        development = self.repo / "agents" / "demo-agent.toml"
+
+        self.manager.sync()
+        self.manager.qa_link(["agent:demo-agent"])
+
+        overlay = manage.resolved_link(self.agents_home)
+        self.assertIsNotNone(overlay)
+        self.assertNotEqual(overlay, (self.repo / "installed" / "agents").resolve())
+        self.assertFalse((self.agents_home / "demo-agent.toml").is_symlink())
+        self.assertTrue(
+            manage.same_resource_content(
+                self.agents_home / "demo-agent.toml", development
+            )
+        )
+        self.assertTrue(
+            manage.same_resource_content(
+                self.agents_home / "other-agent.toml", formal_other
+            )
+        )
+        self.assertFalse(
+            manage.same_resource_content(
+                self.agents_home / "demo-agent.toml", formal_demo
+            )
+        )
+        output = io.StringIO()
+        with redirect_stdout(output):
+            self.manager.device_list()
+        self.assertIn("仓库 QA 聚合", output.getvalue())
+        self.assertIn("仓库正式同步", output.getvalue())
+
+        development.write_text(
+            development.read_text(encoding="utf-8") + "# refreshed\n",
+            encoding="utf-8",
+        )
+        output = io.StringIO()
+        with redirect_stdout(output):
+            self.manager.status()
+        self.assertIn("QA 聚合待刷新", output.getvalue())
+
+        self.manager.qa_link(["agent:demo-agent"])
+        self.assertTrue(
+            manage.same_resource_content(
+                self.agents_home / "demo-agent.toml", development
+            )
+        )
+
+        self.manager.qa_unlink(["agent:demo-agent"])
+        self.assertEqual(
+            manage.resolved_link(self.agents_home),
+            (self.repo / "installed" / "agents").resolve(),
+        )
+        self.assertTrue(
+            manage.same_resource_content(
+                self.agents_home / "demo-agent.toml", formal_demo
+            )
+        )
+
+    def test_agent_directory_conflict_requires_force_and_restores_backup(self):
+        self.agents_home.mkdir(parents=True)
+        local = self.agents_home / "local-agent.toml"
+        local.write_text("local device agent\n", encoding="utf-8")
+
+        with self.assertRaisesRegex(manage.ManagerError, "接管整个目录"):
+            self.manager.qa_link(["agent:demo-agent"])
+        self.assertEqual(local.read_text(encoding="utf-8"), "local device agent\n")
+        self.assertFalse(manage.path_present(self.manager.agent_overlay_source))
+
+        self.manager.qa_link(["agent:demo-agent"], force=True)
+        self.assertTrue(self.agents_home.is_symlink())
+        backups = list(
+            (self.codex / ".skills-research" / "backups").rglob(
+                "local-agent.toml"
+            )
+        )
+        self.assertEqual(len(backups), 1)
+
+        self.manager.qa_unlink(["agent:demo-agent"])
+        self.assertTrue(self.agents_home.is_dir())
+        self.assertFalse(self.agents_home.is_symlink())
+        self.assertEqual(
+            (self.agents_home / "local-agent.toml").read_text(encoding="utf-8"),
+            "local device agent\n",
+        )
+
+    def test_formal_agent_directory_force_backup_is_restored_on_unsync(self):
+        self.add_installed_agent("formal-agent")
+        self.agents_home.mkdir(parents=True)
+        local = self.agents_home / "local-agent.toml"
+        local.write_text("local before formal sync\n", encoding="utf-8")
+
+        with self.assertRaisesRegex(manage.ManagerError, "接管整个目录"):
+            self.manager.sync()
+
+        self.manager.sync(force=True)
+        self.assertEqual(
+            manage.resolved_link(self.agents_home),
+            (self.repo / "installed" / "agents").resolve(),
+        )
+
+        self.manager.unsync(["agent:formal-agent"])
+        self.assertTrue(self.agents_home.is_dir())
+        self.assertFalse(self.agents_home.is_symlink())
+        self.assertEqual(
+            (self.agents_home / "local-agent.toml").read_text(encoding="utf-8"),
+            "local before formal sync\n",
+        )
+
+    def test_agent_directory_drift_blocks_qa_unlink(self):
+        self.manager.qa_link(["agent:demo-agent"])
+        self.agents_home.unlink()
+        self.agents_home.mkdir()
+        (self.agents_home / "keep.toml").write_text("drift\n", encoding="utf-8")
+
+        with self.assertRaisesRegex(manage.ManagerError, "目录软链接"):
+            self.manager.qa_unlink(["agent:demo-agent"])
+        self.assertEqual(
+            (self.agents_home / "keep.toml").read_text(encoding="utf-8"),
+            "drift\n",
+        )
+
+    def test_manifest_v2_is_not_accepted(self):
+        self.manager.manifest_path.parent.mkdir(parents=True)
+        self.manager.manifest_path.write_text(
+            '{"version": 2, "resources": []}\n', encoding="utf-8"
+        )
+
+        with self.assertRaisesRegex(manage.ManagerError, "不支持的管理清单"):
+            self.manager.status()
+
     def test_qa_temporarily_overrides_and_restores_formal_resource(self):
         installed = self.add_installed_skill("demo-skill")
         target = self.skills_home / "demo-skill"
@@ -313,6 +491,34 @@ class ResourceManagerTest(unittest.TestCase):
         with redirect_stdout(output):
             self.manager.device_list()
         self.assertIn("仓库正式同步", output.getvalue())
+
+    def test_adopt_single_device_agent_takes_over_parent_directory(self):
+        self.agents_home.mkdir(parents=True)
+        local_agent = self.agents_home / "local-agent.toml"
+        local_agent.write_text(
+            'name = "local_agent"\n'
+            'description = "用于验证 Agent 纳管。"\n'
+            'developer_instructions = "只执行测试任务。"\n',
+            encoding="utf-8",
+        )
+
+        self.manager.adopt("agent:local-agent")
+
+        repository_agent = (
+            self.repo / "installed" / "agents" / "local-agent.toml"
+        )
+        self.assertTrue(repository_agent.is_file())
+        self.assertTrue(self.agents_home.is_symlink())
+        self.assertEqual(
+            manage.resolved_link(self.agents_home),
+            (self.repo / "installed" / "agents").resolve(),
+        )
+        self.assertFalse((self.agents_home / "local-agent.toml").is_symlink())
+        self.assertTrue(
+            manage.same_resource_content(
+                self.agents_home / "local-agent.toml", repository_agent
+            )
+        )
 
     def test_adopt_migrates_legacy_skill_to_standard_link_location(self):
         legacy_skill = self.codex / "skills" / "legacy-skill"

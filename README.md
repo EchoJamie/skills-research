@@ -41,5 +41,6 @@
 ## 文档
 
 - [资源与目录约定](docs/conventions.md)
+- [研究记录规范](docs/research-records.md)
 - [技能系列索引](docs/skill-series.md)
 - [资源管理器使用指南](docs/manager-usage.md)

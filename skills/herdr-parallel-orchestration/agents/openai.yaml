@@ -1,6 +1,6 @@
 interface:
   display_name: "Herdr Parallel Orchestration"
-  short_description: "Keep the main agent working with visible Herdr help"
-  default_prompt: "Use $herdr-parallel-orchestration to keep executing this task while parallelizing bounded work through visible Herdr agents."
+  short_description: "Keep ready work flowing through visible Herdr agents"
+  default_prompt: "Use $herdr-parallel-orchestration to keep the main task moving while refilling ready independent responsibility lanes through visible Herdr agents."
 policy:
   allow_implicit_invocation: false

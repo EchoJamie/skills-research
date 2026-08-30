@@ -44,6 +44,7 @@ description: "Keep the active main agent and visible Herdr agents advancing read
 ## 已验证的失效护栏
 
 - **并行派发不得占住主线**：用于并行责任链的 `herdr agent prompt` 默认不使用 `--wait`；提交成功后，主智能体立即继续自己的责任。只有主智能体已无可推进工作，并且下一步事实性依赖该 Agent 的结果或阻塞信息时，才使用等待。等待是依赖成立后的例外，不是派发的默认组成部分。
+- **Skill 调用不得沿派发链传播**：向 Herdr Agent、普通智能体或内置子代理派发责任时，提示词中不得包含 `$herdr-parallel-orchestration`，也不得要求接收者启用或继续使用本 Skill。本 Skill 只约束当前主智能体的编排，不属于其他智能体的结果责任链。
 
 ## 派发、回填与交接
 

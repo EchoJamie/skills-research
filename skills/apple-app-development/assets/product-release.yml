@@ -1,0 +1,97 @@
+# 复制到 .github/workflows/product-release.yml，按 github-actions.md 适配项目参数。
+name: Product release
+
+on:
+  push:
+    tags: ['v*']
+
+permissions:
+  contents: read
+
+concurrency:
+  group: product-release-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  build:
+    # 默认一个 Apple Silicon 目标；按实际支持架构选择 runner，不自动增加矩阵。
+    runs-on: macos-15
+    timeout-minutes: 45
+    defaults:
+      run:
+        shell: bash
+    env:
+      SIGNING_IDENTITY: ${{ vars.MACOS_SIGNING_IDENTITY }}
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          persist-credentials: false
+
+      # 在这里接入项目已有的依赖准备；版本和发布说明已在推送 tag 前准备完成。
+      - name: Import signing certificate
+        shell: bash
+        env:
+          CERTIFICATE_BASE64: ${{ secrets.MACOS_CERTIFICATE_P12_BASE64 }}
+          CERTIFICATE_PASSWORD: ${{ secrets.MACOS_CERTIFICATE_PASSWORD }}
+        run: |
+          set -euo pipefail
+          : "${CERTIFICATE_BASE64:?Missing MACOS_CERTIFICATE_P12_BASE64}"
+          : "${CERTIFICATE_PASSWORD:?Missing MACOS_CERTIFICATE_PASSWORD}"
+          umask 077
+          signing_p12="$RUNNER_TEMP/app-signing.p12"
+          signing_keychain="$RUNNER_TEMP/app-signing.keychain-db"
+          signing_password="$(openssl rand -hex 32)"
+          echo "::add-mask::$signing_password"
+          printf '%s' "$CERTIFICATE_BASE64" | base64 --decode > "$signing_p12"
+          security create-keychain -p "$signing_password" "$signing_keychain"
+          security set-keychain-settings -lut 21600 "$signing_keychain"
+          security unlock-keychain -p "$signing_password" "$signing_keychain"
+          security import "$signing_p12" -P "$CERTIFICATE_PASSWORD" \
+            -k "$signing_keychain" -T /usr/bin/codesign
+          security set-key-partition-list -S apple-tool:,apple:,codesign: \
+            -s -k "$signing_password" "$signing_keychain" >/dev/null
+          security list-keychains -d user -s "$signing_keychain"
+          rm -f "$signing_p12"
+
+      - name: Build signed Release DMG
+        run: bash scripts/build-dmg.sh
+
+      - name: Upload final DMG
+        uses: actions/upload-artifact@v7
+        with:
+          name: product-release
+          path: dist/*.dmg
+          if-no-files-found: error
+          compression-level: 0
+          retention-days: 7
+
+      - name: Remove signing material
+        if: always()
+        shell: bash
+        run: |
+          set -euo pipefail
+          rm -f "$RUNNER_TEMP/app-signing.p12"
+          signing_keychain="$RUNNER_TEMP/app-signing.keychain-db"
+          if [[ -f "$signing_keychain" ]]; then
+            security delete-keychain "$signing_keychain"
+          fi
+
+  publish:
+    needs: build
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/download-artifact@v8
+        with:
+          name: product-release
+          path: release
+      - name: Publish GitHub Release
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+          RELEASE_TAG: ${{ github.ref_name }}
+        run: |
+          gh release create "$RELEASE_TAG" release/*.dmg \
+            --verify-tag --title "$RELEASE_TAG" --notes-from-tag

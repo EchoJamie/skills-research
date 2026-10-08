@@ -15,10 +15,13 @@
 | Skill | 作用 | 使用方式 |
 |---|---|---|
 | `jamie-working-agreements` | 将高置信度历史纠偏提炼成 Jamie 的个人工作偏好，在任务开始前校准自主判断 | 非简单任务进入调研、设计、实施、协作或交付时主动使用，并只加载当前场景的 `references/` |
+| `apple-app-development` | 应用软件设计、原生交互、Apple Development 签名、Release／DMG 打包与版本约定，提供可适配的打包脚本、产品 tag 发布与站点构建 workflow 模板 | Apple 应用设计、开发、修复或交付时按场景读取功能取舍、设置与交互、版本管理、构建签名打包、GitHub Actions 或原生验证参考，也可通过 `$apple-app-development` 显式调用 |
 | `herdr-parallel-orchestration` | 让主智能体与 Herdr 可见 Agent 持续推进已就绪的独立责任链，优先回填可委派工作并保留全局收口 | 由用户通过 `$herdr-parallel-orchestration` 显式调用 |
 | `code-governance-review` | 基于完整业务逻辑专项审查职责分层、依赖边界、代码治理、可维护性、可扩展性及设计模式必要性 | 关闭隐式调用，由配套 `code_governance_reviewer` Agent 显式加载；不用于通用代码审查 |
 
 `jamie-working-agreements` 与 `herdr-parallel-orchestration` 不属于任何业务系列，因此不标注所属系列。前者不占据业务流程的固定阶段，也不替代具体任务 Skill，只负责在任务开始前应用个人偏好；后者是按需显式调用的独立协作 Skill。`collaboration-workflow` 继续负责通用的多步骤人机协作循环。
+
+`apple-app-development` 是独立的 Apple 应用开发 Skill，不新增流程阶段或配套 Agent。其设计相关参考分为产品行为决策、场景交互、macOS 实现与验证三层，按任务读取；与通用个人偏好组合使用时，由它承载 Apple 应用的具体约定。
 
 ### 代码治理审查配套 Agent
 

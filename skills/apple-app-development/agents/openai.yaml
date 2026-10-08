@@ -1,0 +1,3 @@
+interface:
+  display_name: "apple-app-development"
+  short_description: "应用 Apple 软件设计、原生交互、开发证书签名与 Release 打包约定"

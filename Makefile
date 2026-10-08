@@ -9,7 +9,7 @@ help:
 	@echo "可用命令："
 	@echo "  make bootstrap     校验并恢复正式已安装集合"
 	@echo "  make validate      校验仓库、Skill 与 Agent"
-	@echo "  make test          运行资源管理器测试"
+	@echo "  make test          运行仓库测试"
 	@echo "  make doctor        检查本机运行条件与安装目录"
 	@echo "  make status        查看开发资源和正式集合状态"
 	@echo "  make device-list   只读盘点设备已有 Skill 与 Agent"

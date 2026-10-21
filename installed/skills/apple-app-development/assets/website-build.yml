@@ -1,0 +1,44 @@
+# 复制到 .github/workflows/website-build.yml，按 github-actions.md 适配路径和构建命令。
+name: Website build
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'website/**'
+      - '.github/workflows/website-build.yml'
+  pull_request:
+    paths:
+      - 'website/**'
+      - '.github/workflows/website-build.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: website-build-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@v7
+        with:
+          node-version: '24'
+          package-manager-cache: false
+      - name: Build static website
+        # 默认无第三方依赖的静态站点；使用包管理器的项目在此运行锁文件安装和已有构建命令。
+        run: node website/build.mjs
+      - name: Upload website output
+        uses: actions/upload-artifact@v7
+        with:
+          name: website
+          path: website/dist/
+          if-no-files-found: error
+          retention-days: 7

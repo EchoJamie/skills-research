@@ -38,6 +38,10 @@
 | `echo-planpack` | Echo | 把确定的功能需求转换为经审核和确认的实施方案、工具包与最终边界。 |
 | `echo-planpack-review` | Echo | 独立审核 Echo 方案或工具包，并生成可追溯的外部审核记录。 |
 
+## 开发环境
+
+资源管理器需要 Python 3.11+（Agent 校验依赖 `tomllib`）。仓库根目录的 `mise.toml` 固定使用 Python 3.12，只在当前目录生效，不改变全局 `python3`。先执行 `mise install`，随后可用 `mise exec -- make validate test` 运行；已启用 `mise activate` 的 shell 进入本目录会自动切换到该版本。
+
 ## 文档
 
 - [资源与目录约定](docs/conventions.md)

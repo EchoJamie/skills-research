@@ -1,21 +1,21 @@
 ---
 name: herdr
-description: "Control Herdr, a terminal multiplexer for coding agents. Use only when the user explicitly mentions Herdr or asks to use Herdr to inspect or control panes, tabs, workspaces, commands, or another agent. Do not use merely because a task could benefit from a background terminal, delegation, or parallel work. Requires HERDR_ENV=1."
+description: "Control Herdr, a terminal multiplexer for coding agents. Use only when the user explicitly mentions Herdr or asks to use Herdr to inspect or control panes, tabs, workspaces, commands, or another agent. Do not use merely because a task could benefit from a background terminal, delegation, or parallel work."
 ---
 
 # Herdr
 
 Herdr organizes terminals into workspaces, tabs, and panes, recognizes coding agents running inside panes, and exposes the current session through the `herdr` CLI.
 
-Before issuing any control command, verify that this agent is running inside a Herdr-managed pane:
+Before issuing any control command, check that the selected Herdr server is running and compatible:
 
 ```bash
-test "${HERDR_ENV:-}" = 1
+herdr status
 ```
 
-If the check fails, say that you are not running inside Herdr and stop. Do not inspect or control the focused Herdr session from outside Herdr.
+Read the reported server status and compatibility, not just the command's exit code. If the CLI is unavailable or the server is stopped, unreachable, or incompatible, report the actual limitation before attempting control commands. Do not start, restart, or upgrade the server unless the user requests it.
 
-When the check passes, the `herdr` binary in `PATH` talks to the current session. Use it to inspect neighboring work, create terminal layout, start agents and commands, read output, and wait for state changes.
+`HERDR_ENV` is not a prerequisite for CLI queries or control; it remains an environment marker used by agent integrations and nested-launch/update guards. A successful status check establishes server availability, not the caller's pane identity. Use the `herdr` binary in `PATH` to inspect live state and resolve the intended target before controlling it.
 
 ## Learn the current CLI
 
@@ -76,15 +76,16 @@ printf '%s\n' "$HERDR_WORKSPACE_ID" "$HERDR_TAB_ID" "$HERDR_PANE_ID"
 
 Prefer `--current` when a pane command should target the calling pane. An omitted `pane split` target uses the calling pane when `HERDR_PANE_ID` is available, otherwise the focused pane. Other commands may use the UI-focused pane, which can belong to the user or another client.
 
-Discover live state with:
+Discover live state without requiring caller context:
 
 ```bash
 herdr workspace list
-herdr tab list --workspace "$HERDR_WORKSPACE_ID"
-herdr pane current --current
-herdr pane list --workspace "$HERDR_WORKSPACE_ID"
+herdr tab list
+herdr pane list
 herdr agent list
 ```
+
+When caller context is available, use `herdr pane current --current` to resolve it and `--workspace <workspace-id>` to narrow lists. If caller context is missing or does not match the intended task, use explicit IDs from live state instead of `--current` or environment variables in the examples below. If the intended target remains ambiguous, ask the user; do not substitute the UI-focused pane.
 
 Creation responses expose the IDs to use next. `workspace create` returns `.result.workspace`, `.result.tab`, and `.result.root_pane`. `tab create` returns `.result.tab` and `.result.root_pane`. `pane split` returns the new pane as `.result.pane`.
 

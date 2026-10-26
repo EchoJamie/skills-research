@@ -80,7 +80,7 @@ flowchart LR
 | `toolkit_architect` | [`agents/toolkit-architect.toml`](../agents/toolkit-architect.toml) | 生成开发工具包时必需 | 工具包 `README.md`、任务包结构和全部任务包 |
 | `interaction_designer` | [`agents/interaction-designer.toml`](../agents/interaction-designer.toml) | 涉及前端、客户端或其他用户终端时启用 | `交互设计.md`；后续只读检查终端任务包 |
 
-两个 Agent 只写主对话明确分配的文档路径。主对话负责整合分歧和关闭关键决策，不让两个 Agent 并发修改同一文件。
+架构师对专业拆分结论负责，交互设计师对必要交互及其落实负责；两者只写主对话明确分配的文档路径。主对话核对事实与交付一致性、组织专业分歧处理，并将影响已确认方案的关键决策交给用户，不代替专业判断或允许并发修改同一文件。
 
 ## Echo 实施规划系列
 
